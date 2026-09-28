@@ -1,4 +1,4 @@
-﻿const http = require('http');
+const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
@@ -166,6 +166,65 @@ const server = http.createServer(async (req, res) => {
                     return sendJson(res, 200, { streamUrl });
                 } catch (streamErr) {
                     console.error('YouTube stream error:', streamErr.message);
+                    return sendJson(res, 500, { error: streamErr.message });
+                }
+            }
+
+            // YOUTUBE DIRECT AUDIO STREAM PROXY (Same-Origin audio for Web Audio API & speakers)
+            if (pathname === '/api/youtube/audio' && req.method === 'GET') {
+                const ytId = parsedUrl.searchParams.get('id');
+                if (!ytId) return sendJson(res, 400, { error: 'Missing YouTube id' });
+
+                try {
+                    const streamUrl = await ytService.getStreamUrl(ytId);
+                    const parsedStreamUrl = new URL(streamUrl);
+                    
+                    const clientReqHeaders = {};
+                    if (req.headers.range) {
+                        clientReqHeaders['range'] = req.headers.range;
+                    }
+
+                    const proxyReq = https.get(parsedStreamUrl, { headers: clientReqHeaders }, (remoteRes) => {
+                        if (remoteRes.statusCode >= 300 && remoteRes.statusCode < 400 && remoteRes.headers.location) {
+                            return https.get(remoteRes.headers.location, { headers: clientReqHeaders }, (locRes) => {
+                                const responseHeaders = {
+                                    'Content-Type': locRes.headers['content-type'] || 'audio/webm',
+                                    'Access-Control-Allow-Origin': '*',
+                                    'Accept-Ranges': 'bytes'
+                                };
+                                if (locRes.headers['content-length']) responseHeaders['Content-Length'] = locRes.headers['content-length'];
+                                if (locRes.headers['content-range']) responseHeaders['Content-Range'] = locRes.headers['content-range'];
+
+                                res.writeHead(locRes.statusCode || 200, responseHeaders);
+                                locRes.pipe(res);
+                            }).on('error', err => {
+                                if (!res.headersSent) sendJson(res, 502, { error: err.message });
+                            });
+                        }
+
+                        const responseHeaders = {
+                            'Content-Type': remoteRes.headers['content-type'] || 'audio/webm',
+                            'Access-Control-Allow-Origin': '*',
+                            'Accept-Ranges': 'bytes'
+                        };
+                        if (remoteRes.headers['content-length']) responseHeaders['Content-Length'] = remoteRes.headers['content-length'];
+                        if (remoteRes.headers['content-range']) responseHeaders['Content-Range'] = remoteRes.headers['content-range'];
+
+                        res.writeHead(remoteRes.statusCode || 200, responseHeaders);
+                        remoteRes.pipe(res);
+                    });
+
+                    proxyReq.on('error', (err) => {
+                        console.error('YouTube audio proxy error:', err.message);
+                        if (!res.headersSent) sendJson(res, 502, { error: 'Failed to stream audio: ' + err.message });
+                    });
+
+                    req.on('close', () => {
+                        proxyReq.destroy();
+                    });
+                    return;
+                } catch (streamErr) {
+                    console.error('YouTube stream extraction error:', streamErr.message);
                     return sendJson(res, 500, { error: streamErr.message });
                 }
             }
@@ -378,11 +437,11 @@ const server = http.createServer(async (req, res) => {
     }
 });
 
-server.listen(PORT, '0.0.0.0', () => { 
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`====================================================`);
-    console.log(` Anand Goud DJ - PORTABLE USB EDITION`);
+    console.log(` ANAND GOUD DJ - PORTABLE EDITION`);
     console.log(` Running at: http://127.0.0.1:${PORT}`);
-    console.log(` USB Root:   ${resolver.getRoot()}`);
+    console.log(` Network IP: http://192.168.1.9:${PORT}`);
     console.log(` Tracks:     ${db.getAllTracks().length} available`);
     console.log(` YouTube Full Songs & DJ Remixes: ACTIVE`);
     console.log(`====================================================`);
