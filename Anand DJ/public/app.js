@@ -4,6 +4,49 @@ document.addEventListener('DOMContentLoaded', () => {
     let masterGain = null;
     let masterAnalyser = null;
 
+    // Smart song title cleaner — extracts only the clean song name from YouTube titles
+    function cleanSongTitle(rawTitle) {
+        if (!rawTitle) return 'Unknown Track';
+        let t = rawTitle;
+
+        // 1. If separated by pipe '|' or '//' or '•', take the primary song title part
+        if (t.includes('|')) {
+            t = t.split('|')[0];
+        } else if (t.includes('//')) {
+            t = t.split('//')[0];
+        } else if (t.includes(' • ')) {
+            t = t.split(' • ')[0];
+        }
+
+        // 2. Remove common YouTube suffixes and junk metadata (case-insensitive)
+        const junkPatterns = [
+            /\s*[\(\[\{]?(?:official\s*(?:video|audio|music\s*video|lyric\s*video|hd|4k|remix|full\s*song|video\s*song))[\)\]\}]?/gi,
+            /\s*[\(\[\{]?(?:full\s*song(?:\s*with\s*(?:telugu|hindi|tamil|english)?\s*lyrics)?|video\s*song|lyric\s*video|audio\s*song|4k\s*ultra\s*hd|4k\s*video|hd\s*video|1080p)[\)\]\}]?/gi,
+            /\s*[\(\[\{]?(?:telugu|hindi|tamil|punjabi|english)\s*(?:song|lyrics|rhymes)?[\)\]\}]?/gi,
+            /\s*(?:with\s+telugu\s+lyrics|with\s+lyrics|lyrics|full\s+song|video\s+song)/gi,
+            /\s*[\(\[\{]\s*[\)\]\}]/g
+        ];
+
+        for (const pat of junkPatterns) {
+            t = t.replace(pat, '');
+        }
+
+        // 3. Trim punctuation and spaces
+        t = t.replace(/^[\s\-_:•|]+|[\s\-_:•|]+$/g, '').trim();
+
+        // 4. Fallback if over-cleaned
+        if (t.length < 2) {
+            t = rawTitle.split('|')[0].trim();
+        }
+
+        // 5. Cap length at 32 characters for clean deck display
+        if (t.length > 32) {
+            t = t.substring(0, 30).trim() + '...';
+        }
+
+        return t;
+    }
+
     class DeckChannel {
         constructor(id, audioEl, isDeckA = true) {
             this.id = id;
@@ -72,71 +115,135 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         async loadTrack(track) {
-            this.track = track;
-            this.baseBpm = track.bpm || 120;
+            // ── 1. Stop & fully reset this deck ──────────────────────────────
+            try { this.audio.pause(); } catch(e) {}
+            this.isPlaying = false;
             this.cuePosition = 0;
             this.loop.active = false;
-            
-            const prefix = this.isDeckA ? 'deck-a' : 'deck-b';
-            const titleEl = document.getElementById(`${prefix}-title`);
-            const artistEl = document.getElementById(`${prefix}-artist`);
 
-            if (track.isYouTube) {
-                titleEl.textContent = 'CONNECTING TO YOUTUBE AUDIO...';
-                artistEl.textContent = track.title;
-                try {
-                    const streamRes = await fetch(`/api/youtube/stream?id=${encodeURIComponent(track.ytId)}`);
-                    const streamData = await streamRes.json();
-                    if (streamData.streamUrl) {
-                        this.audio.src = streamData.streamUrl;
-                    } else {
-                        throw new Error(streamData.error || 'Failed to fetch YouTube audio stream');
-                    }
-                } catch (streamErr) {
-                    titleEl.textContent = 'STREAM ERROR';
-                    artistEl.textContent = streamErr.message;
-                    return;
-                }
-            } else if (track.isOnline) {
-                this.audio.src = track.previewUrl;
-            } else {
-                this.audio.src = `/audio/${encodeURIComponent(track.relativePath)}`;
+            const prefix  = this.isDeckA ? 'deck-a' : 'deck-b';
+            const titleEl = document.getElementById(`${prefix}-title`);
+            const artistEl= document.getElementById(`${prefix}-artist`);
+            const playBtn = document.getElementById(`${prefix}-play`);
+            const loopBtn = document.getElementById(`${prefix}-loop-toggle`);
+
+            // ── 2. Reset UI immediately ───────────────────────────────────────
+            if (playBtn) {
+                playBtn.disabled = true;
+                playBtn.classList.remove('playing');
+                playBtn.innerHTML = '⏳ LOADING...';
+            }
+            if (loopBtn) {
+                loopBtn.style.background = 'transparent';
+                loopBtn.style.color = '#4facfe';
+                loopBtn.textContent = 'LOOP';
             }
 
-            this.audio.playbackRate = 1 + (this.pitch / 100);
+            // ── 3. Same-origin stream via local backend proxy (fixes Web Audio CORS silence) ─
+            if (track.isYouTube) {
+                const shortTitle = cleanSongTitle(track.title);
+                titleEl.textContent = '⏳ FETCHING AUDIO...';
+                titleEl.title = track.title;
+                artistEl.textContent = shortTitle;
+                artistEl.title = track.title;
+                track._resolvedSrc = `/api/youtube/audio?id=${encodeURIComponent(track.ytId)}`;
+            }
+
+            // ── 4. Assign track & set audio source ───────────────────────────
+            this.track = track;
+            this.baseBpm = track.bpm || 120;
+
+            const src = track.isYouTube
+                ? track._resolvedSrc
+                : track.isOnline
+                    ? track.previewUrl
+                    : `/audio/${encodeURIComponent(track.relativePath)}`;
+
+            // Detach from old src cleanly
+            this.audio.pause();
+            this.audio.removeAttribute('src');
             this.audio.load();
 
+            this.audio.src = src;
+            this.audio.playbackRate = Math.max(0.5, Math.min(2.0, 1 + (this.pitch / 100)));
+
+            // ── 5. Wait for canplay with a 6-second safety timeout ────────────
+            await new Promise((resolve) => {
+                let done = false;
+                const finish = () => { if (!done) { done = true; resolve(); } };
+
+                const timer = setTimeout(finish, 6000); // 6s max wait
+
+                this.audio.addEventListener('canplay', () => {
+                    clearTimeout(timer); finish();
+                }, { once: true });
+
+                this.audio.addEventListener('error', () => {
+                    clearTimeout(timer); finish();
+                }, { once: true });
+
+                this.audio.load();
+            });
+
+            // ── 6. Re-enable PLAY button and update UI ────────────────────────
+            if (playBtn) {
+                playBtn.disabled = false;
+                playBtn.innerHTML = '▶ PLAY';
+            }
             this.updateUi();
             saveSessionStateDebounced();
         }
 
         updateUi() {
-            const prefix = this.isDeckA ? 'deck-a' : 'deck-b';
+            const prefix  = this.isDeckA ? 'deck-a' : 'deck-b';
             const titleEl = document.getElementById(`${prefix}-title`);
-            const artistEl = document.getElementById(`${prefix}-artist`);
-            const bpmEl = document.getElementById(`${prefix}-bpm`);
+            const artistEl= document.getElementById(`${prefix}-artist`);
+            const bpmEl   = document.getElementById(`${prefix}-bpm`);
 
             if (this.track) {
-                const sourceTag = this.track.isYouTube ? '▶ YOUTUBE' : (this.track.isOnline ? '🌐 CLOUD' : '💾 USB');
-                titleEl.textContent = this.track.title;
-                artistEl.textContent = `${this.track.artist} • [${sourceTag} • ${this.track.category}]`;
-                const dynamicBpm = (this.baseBpm * (1 + this.pitch / 100)).toFixed(1);
-                bpmEl.textContent = dynamicBpm;
+                const sourceTag = this.track.isYouTube ? '▶ YT'
+                    : this.track.isOnline ? '🌐 CLOUD' : '💾 USB';
+                const shortTitle = cleanSongTitle(this.track.title);
+                titleEl.textContent  = shortTitle;
+                titleEl.title        = this.track.title; // hover to see full original title
+                artistEl.textContent = `${this.track.artist || 'YouTube'} • [${sourceTag}]`;
+                artistEl.title       = `${this.track.artist} (${this.track.title})`;
+                bpmEl.textContent    = (this.baseBpm * (1 + this.pitch / 100)).toFixed(1);
             } else {
-                titleEl.textContent = 'NO TRACK LOADED';
-                artistEl.textContent = 'Search any YouTube DJ remix or song below';
-                bpmEl.textContent = '---.--';
+                titleEl.textContent  = 'NO TRACK LOADED';
+                titleEl.title        = '';
+                artistEl.textContent = 'Search any song or DJ remix on YouTube';
+                artistEl.title       = '';
+                bpmEl.textContent    = '---.--';
             }
         }
 
         play() {
-            initAudioContext();
             if (!this.track) return;
+            // Ensure AudioContext exists and is running
+            initAudioContext();
+            this._doPlay();
+        }
+
+        _doPlay() {
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            this.audio.muted = false;
+            this.audio.volume = 1.0;
+
+            // If not ready yet, wait briefly then retry
+            if (this.audio.readyState < 2) {
+                const onReady = () => {
+                    this.audio.removeEventListener('canplay', onReady);
+                    this._doPlay();
+                };
+                this.audio.addEventListener('canplay', onReady, { once: true });
+                return;
+            }
+
             this.audio.play().then(() => {
                 this.isPlaying = true;
                 const btn = document.getElementById(this.isDeckA ? 'deck-a-play' : 'deck-b-play');
-                btn.classList.add('playing');
-                btn.innerHTML = '❚❚ PAUSE';
+                if (btn) { btn.classList.add('playing'); btn.innerHTML = '❚❚ PAUSE'; }
                 if (!this.track.isOnline && !this.track.isYouTube) {
                     fetch('/api/history/log', {
                         method: 'POST',
@@ -148,21 +255,27 @@ document.addEventListener('DOMContentLoaded', () => {
                         })
                     }).catch(() => {});
                 }
-            }).catch(e => console.error('Play error:', e));
+            }).catch(err => {
+                console.warn('Play failed, retrying after canplay:', err.message);
+                // Browser blocked autoplay — retry on next user gesture is needed
+                const btn = document.getElementById(this.isDeckA ? 'deck-a-play' : 'deck-b-play');
+                if (btn) { btn.classList.remove('playing'); btn.innerHTML = '▶ PLAY'; }
+                this.isPlaying = false;
+            });
         }
 
         pause() {
             this.audio.pause();
             this.isPlaying = false;
             const btn = document.getElementById(this.isDeckA ? 'deck-a-play' : 'deck-b-play');
-            btn.classList.remove('playing');
-            btn.innerHTML = '▶ PLAY';
+            if (btn) { btn.classList.remove('playing'); btn.innerHTML = '▶ PLAY'; }
         }
 
         togglePlay() {
             if (this.isPlaying) this.pause();
             else this.play();
         }
+
 
         cueDown() {
             initAudioContext();
@@ -253,6 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
             deckA.initNodes(audioCtx);
             deckB.initNodes(audioCtx);
 
+            setDecksFullGain();
             updateCrossfader(document.getElementById('crossfader').value);
             startVuAndWaveformAnimation();
             populateAudioOutputDevices();
@@ -530,52 +644,43 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('deck-a-loop-toggle').addEventListener('click', () => deckA.toggleLoop());
     document.getElementById('deck-b-loop-toggle').addEventListener('click', () => deckB.toggleLoop());
 
-    // EQ
-    function setupEqControls(deck, prefix) {
-        document.getElementById(`${prefix}-gain`).addEventListener('input', (e) => {
+    // Set both deck fader gains to full (channel faders removed)
+    function setDecksFullGain() {
+        if (deckA.deckFaderGain) deckA.deckFaderGain.gain.value = 1.0;
+        if (deckB.deckFaderGain) deckB.deckFaderGain.gain.value = 1.0;
+    }
+
+    // Global BASS / MID / TREBLE EQ — controls both decks simultaneously
+    function setupGlobalEq() {
+        const bassSlider   = document.getElementById('eq-bass');
+        const midSlider    = document.getElementById('eq-mid');
+        const trebleSlider = document.getElementById('eq-treble');
+        const bassVal      = document.getElementById('eq-bass-val');
+        const midVal       = document.getElementById('eq-mid-val');
+        const trebleVal    = document.getElementById('eq-treble-val');
+
+        bassSlider.addEventListener('input', (e) => {
             initAudioContext();
-            deck.trimGain.gain.value = parseFloat(e.target.value);
+            const v = parseFloat(e.target.value);
+            bassVal.textContent = (v >= 0 ? '+' : '') + v;
+            [deckA, deckB].forEach(d => { if (d.lowFilter) d.lowFilter.gain.value = v; });
         });
 
-        document.getElementById(`${prefix}-hi`).addEventListener('input', (e) => {
+        midSlider.addEventListener('input', (e) => {
             initAudioContext();
-            if (!deck.kills.hi) deck.hiFilter.gain.value = parseFloat(e.target.value);
-        });
-        document.getElementById(`${prefix}-mid`).addEventListener('input', (e) => {
-            initAudioContext();
-            if (!deck.kills.mid) deck.midFilter.gain.value = parseFloat(e.target.value);
-        });
-        document.getElementById(`${prefix}-low`).addEventListener('input', (e) => {
-            initAudioContext();
-            if (!deck.kills.low) deck.lowFilter.gain.value = parseFloat(e.target.value);
+            const v = parseFloat(e.target.value);
+            midVal.textContent = (v >= 0 ? '+' : '') + v;
+            [deckA, deckB].forEach(d => { if (d.midFilter) d.midFilter.gain.value = v; });
         });
 
-        document.getElementById(`${prefix}-kill-hi`).addEventListener('click', (e) => {
+        trebleSlider.addEventListener('input', (e) => {
             initAudioContext();
-            deck.kills.hi = !deck.kills.hi;
-            e.target.classList.toggle('active', deck.kills.hi);
-            deck.hiFilter.gain.value = deck.kills.hi ? -70 : parseFloat(document.getElementById(`${prefix}-hi`).value);
-        });
-        document.getElementById(`${prefix}-kill-mid`).addEventListener('click', (e) => {
-            initAudioContext();
-            deck.kills.mid = !deck.kills.mid;
-            e.target.classList.toggle('active', deck.kills.mid);
-            deck.midFilter.gain.value = deck.kills.mid ? -70 : parseFloat(document.getElementById(`${prefix}-mid`).value);
-        });
-        document.getElementById(`${prefix}-kill-low`).addEventListener('click', (e) => {
-            initAudioContext();
-            deck.kills.low = !deck.kills.low;
-            e.target.classList.toggle('active', deck.kills.low);
-            deck.lowFilter.gain.value = deck.kills.low ? -70 : parseFloat(document.getElementById(`${prefix}-low`).value);
-        });
-
-        document.getElementById(`${prefix}-fader`).addEventListener('input', (e) => {
-            initAudioContext();
-            deck.deckFaderGain.gain.value = parseFloat(e.target.value);
+            const v = parseFloat(e.target.value);
+            trebleVal.textContent = (v >= 0 ? '+' : '') + v;
+            [deckA, deckB].forEach(d => { if (d.hiFilter) d.hiFilter.gain.value = v; });
         });
     }
-    setupEqControls(deckA, 'deck-a');
-    setupEqControls(deckB, 'deck-b');
+    setupGlobalEq();
 
     document.getElementById('master-vol').addEventListener('input', (e) => {
         initAudioContext();
@@ -661,8 +766,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateCrossfader(0.0);
             document.getElementById('master-vol').value = 1.0;
             masterGain.gain.value = 1.0;
-            document.getElementById('deck-a-fader').value = 1.0;
-            deckA.deckFaderGain.gain.value = 1.0;
+            if (deckA.deckFaderGain) deckA.deckFaderGain.gain.value = 1.0;
             
             setTimeout(() => {
                 deckA.play();
@@ -688,12 +792,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data.lastSessionState && data.lastSessionState.lastPlayed) {
                 lastKnownTrack = data.lastSessionState.lastPlayed;
-                document.getElementById('em-track-title').textContent = lastKnownTrack.title;
+                document.getElementById('em-track-title').textContent = cleanSongTitle(lastKnownTrack.title);
+                document.getElementById('em-track-title').title = lastKnownTrack.title;
                 document.getElementById('em-track-artist').textContent = `${lastKnownTrack.artist} • [${lastKnownTrack.category}]`;
                 document.getElementById('em-track-time').textContent = `Restored Track (BPM: ${lastKnownTrack.bpm})`;
             } else if (allTracks.length > 0) {
                 lastKnownTrack = allTracks[0];
-                document.getElementById('em-track-title').textContent = lastKnownTrack.title;
+                document.getElementById('em-track-title').textContent = cleanSongTitle(lastKnownTrack.title);
+                document.getElementById('em-track-title').title = lastKnownTrack.title;
                 document.getElementById('em-track-artist').textContent = `${lastKnownTrack.artist} • [${lastKnownTrack.category}]`;
             }
         } catch (e) {
@@ -703,14 +809,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Search & YouTube Integration ---
     const searchInput = document.getElementById('library-search');
-    const searchYtBtn = document.getElementById('btn-search-youtube');
+    const searchYtBtn = document.getElementById('btn-search-online');
     const statusBar = document.getElementById('search-status-bar');
     const statusText = document.getElementById('search-status-text');
 
     async function searchYouTubeCatalog(term) {
-        if (!term || term.trim().length < 2) return;
+        if (!term || term.trim().length < 2) {
+            statusBar.classList.remove('hidden');
+            statusText.innerHTML = `⚠️ Type a song name in the search bar and click <b>▶ SEARCH YOUTUBE</b>.`;
+            return;
+        }
         statusBar.classList.remove('hidden');
-        statusText.innerHTML = `▶ Searching YouTube for full songs & remixes: "<b>${term}</b>"...`;
+        statusText.innerHTML = `▶ Searching YouTube for: "<b>${term}</b>"...`;
         
         try {
             const res = await fetch(`/api/youtube/search?query=${encodeURIComponent(term)}`);
@@ -718,14 +828,17 @@ document.addEventListener('DOMContentLoaded', () => {
             youtubeResults = data.results || [];
             
             if (youtubeResults.length > 0) {
-                statusText.innerHTML = `✅ Found <b>${youtubeResults.length}</b> full duration YouTube tracks for "<b>${term}</b>"! Click <b>LOAD A/B</b> to play full song live, or <b>SAVE TO USB</b>.`;
+                statusText.innerHTML = `✅ Found <b>${youtubeResults.length}</b> tracks for "<b>${term}</b>"! Click <b>LOAD A</b> or <b>LOAD B</b> to play.`;
                 currentCategory = '_youtube';
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 const tabYt = document.getElementById('tab-youtube');
-                if (tabYt) tabYt.classList.add('active');
+                if (tabYt) {
+                    tabYt.style.display = 'inline-block';
+                    tabYt.classList.add('active');
+                }
                 renderTrackTable(youtubeResults);
             } else {
-                statusText.innerHTML = `❌ No YouTube songs found for "<b>${term}</b>". Try another search query.`;
+                statusText.innerHTML = `❌ No YouTube tracks found for "<b>${term}</b>". Try another search query.`;
             }
         } catch (err) {
             statusText.innerHTML = `⚠️ YouTube search error: ${err.message}`;
@@ -812,6 +925,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const durStr = track.durationFormatted || (track.duration ? formatTime(track.duration) : '03:30');
             const tagClass = isYouTube ? 'category-tag youtube' : (isOnline ? 'category-tag online' : 'category-tag');
             const tagLabel = isYouTube ? '▶ YT ' + track.category : (isOnline ? '🌐 ' + track.category : track.category);
+            const shortTitle = cleanSongTitle(track.title);
 
             tr.innerHTML = `
                 <td>
@@ -827,7 +941,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>
                     <div class="track-title-cell">
                         ${artworkHtml}
-                        <span style="font-weight:600; color:#fff;" title="${track.title}">${track.title}</span>
+                        <span style="font-weight:600; color:#fff;" title="${track.title}">${shortTitle}</span>
                     </div>
                 </td>
                 <td>${track.artist}</td>
@@ -1042,6 +1156,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentCategory = btn.dataset.cat;
+            if (currentCategory !== '_youtube') {
+                const tabYt = document.getElementById('tab-youtube');
+                if (tabYt) tabYt.style.display = 'none';
+            }
             statusBar.classList.add('hidden');
             loadTracks();
         });

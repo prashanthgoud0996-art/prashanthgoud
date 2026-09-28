@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DJ MUSIC SYSTEM — Portable USB Edition</title>
+    <title>ANAND GOUD DJ — Portable Console</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,8 +16,8 @@
     <!-- Top System Header -->
     <header class="top-bar">
         <div class="brand">
-            <div class="brand-title">DJ MUSIC SYSTEM</div>
-            <div class="brand-tag">PORTABLE USB & EVENT SAFETY</div>
+            <div class="brand-title">ANAND GOUD DJ</div>
+            <div class="brand-tag">PORTABLE CONSOLE</div>
         </div>
 
         <div class="system-indicators">
@@ -221,99 +221,56 @@
                 <span>MASTER MIXER</span>
             </div>
 
-            <!-- EQ Channels -->
-            <div class="eq-channels">
-                <!-- Deck A Channel EQ -->
-                <div class="channel-strip">
-                    <span class="ch-label ch-a">CH A</span>
-                    <div class="knob-group">
-                        <label>TRIM</label>
-                        <input type="range" id="deck-a-gain" min="0" max="1.5" step="0.05" value="1.0" class="knob-slider">
-                    </div>
-                    <div class="knob-group">
-                        <label>HI</label>
-                        <input type="range" id="deck-a-hi" min="-24" max="12" step="1" value="0" class="knob-slider">
-                        <button class="btn-kill" id="deck-a-kill-hi">KILL</button>
-                    </div>
-                    <div class="knob-group">
-                        <label>MID</label>
-                        <input type="range" id="deck-a-mid" min="-24" max="12" step="1" value="0" class="knob-slider">
-                        <button class="btn-kill" id="deck-a-kill-mid">KILL</button>
-                    </div>
-                    <div class="knob-group">
-                        <label>LOW</label>
-                        <input type="range" id="deck-a-low" min="-24" max="12" step="1" value="0" class="knob-slider">
-                        <button class="btn-kill" id="deck-a-kill-low">KILL</button>
-                    </div>
-
-                    <!-- Deck A Volume Fader -->
-                    <div class="fader-group">
-                        <div class="fader-meter">
-                            <div class="meter-bar" id="meter-deck-a"></div>
+            <!-- Master Volume + VU -->
+            <div class="master-vol-row">
+                <div class="master-vol-box">
+                    <label>MASTER</label>
+                    <input type="range" id="master-vol" min="0" max="1.2" step="0.02" value="0.9" class="knob-slider master-knob">
+                </div>
+                <div class="master-vu-meters">
+                    <div class="vu-col">
+                        <span class="vu-lbl">L</span>
+                        <div class="vu-bar-track">
+                            <div class="vu-level" id="vu-master-l"></div>
                         </div>
-                        <input type="range" id="deck-a-fader" min="0" max="1" step="0.01" value="0.9" orient="vertical" class="volume-fader">
+                    </div>
+                    <div class="vu-col">
+                        <span class="vu-lbl">R</span>
+                        <div class="vu-bar-track">
+                            <div class="vu-level" id="vu-master-r"></div>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Master Controls & Center Meters -->
-                <div class="master-strip">
-                    <div class="master-vol-box">
-                        <label>MASTER</label>
-                        <input type="range" id="master-vol" min="0" max="1.2" step="0.02" value="0.9" class="knob-slider master-knob">
-                    </div>
-
-                    <div class="master-vu-meters">
-                        <div class="vu-col">
-                            <span class="vu-lbl">L</span>
-                            <div class="vu-bar-track">
-                                <div class="vu-level" id="vu-master-l"></div>
-                            </div>
-                        </div>
-                        <div class="vu-col">
-                            <span class="vu-lbl">R</span>
-                            <div class="vu-bar-track">
-                                <div class="vu-level" id="vu-master-r"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="booth-monitor-box">
-                        <span class="booth-tag">PORTABLE</span>
-                        <span class="bitrate-tag">44.1 kHz</span>
-                    </div>
+            <!-- Global BASS / MID / TREBLE EQ -->
+            <div class="global-eq">
+                <div class="eq-band">
+                    <label class="eq-band-label">BASS</label>
+                    <input type="range" id="eq-bass" min="-24" max="12" step="1" value="0" orient="vertical" class="eq-fader eq-bass-fader">
+                    <span class="eq-val" id="eq-bass-val">0</span>
                 </div>
-
-                <!-- Deck B Channel EQ -->
-                <div class="channel-strip">
-                    <span class="ch-label ch-b">CH B</span>
-                    <div class="knob-group">
-                        <label>TRIM</label>
-                        <input type="range" id="deck-b-gain" min="0" max="1.5" step="0.05" value="1.0" class="knob-slider">
-                    </div>
-                    <div class="knob-group">
-                        <label>HI</label>
-                        <input type="range" id="deck-b-hi" min="-24" max="12" step="1" value="0" class="knob-slider">
-                        <button class="btn-kill" id="deck-b-kill-hi">KILL</button>
-                    </div>
-                    <div class="knob-group">
-                        <label>MID</label>
-                        <input type="range" id="deck-b-mid" min="-24" max="12" step="1" value="0" class="knob-slider">
-                        <button class="btn-kill" id="deck-b-kill-mid">KILL</button>
-                    </div>
-                    <div class="knob-group">
-                        <label>LOW</label>
-                        <input type="range" id="deck-b-low" min="-24" max="12" step="1" value="0" class="knob-slider">
-                        <button class="btn-kill" id="deck-b-kill-low">KILL</button>
-                    </div>
-
-                    <!-- Deck B Volume Fader -->
-                    <div class="fader-group">
-                        <div class="fader-meter">
-                            <div class="meter-bar" id="meter-deck-b"></div>
-                        </div>
-                        <input type="range" id="deck-b-fader" min="0" max="1" step="0.01" value="0.9" orient="vertical" class="volume-fader">
-                    </div>
+                <div class="eq-band">
+                    <label class="eq-band-label">MID</label>
+                    <input type="range" id="eq-mid" min="-24" max="12" step="1" value="0" orient="vertical" class="eq-fader eq-mid-fader">
+                    <span class="eq-val" id="eq-mid-val">0</span>
                 </div>
+                <div class="eq-band">
+                    <label class="eq-band-label">TREBLE</label>
+                    <input type="range" id="eq-treble" min="-24" max="12" step="1" value="0" orient="vertical" class="eq-fader eq-treble-fader">
+                    <span class="eq-val" id="eq-treble-val">0</span>
+                </div>
+            </div>
+
+            <div class="booth-monitor-box">
+                <span class="booth-tag">PORTABLE</span>
+                <span class="bitrate-tag">44.1 kHz</span>
+            </div>
+
+            <!-- Hidden meter bars still needed by JS animation -->
+            <div style="display:none">
+                <div id="meter-deck-a"></div>
+                <div id="meter-deck-b"></div>
             </div>
 
             <!-- Crossfader Section -->
@@ -401,28 +358,21 @@
     <!-- Bottom Music Library & Universal Search -->
     <section class="music-library-section">
         <div class="library-toolbar">
-            <!-- Category Tabs -->
+            <!-- Library View Tabs -->
             <div class="category-tabs" id="category-tabs">
-                <button class="tab-btn active" data-cat="All">ALL</button>
-                <button class="tab-btn" data-cat="Telugu">TELUGU</button>
-                <button class="tab-btn" data-cat="Hindi">HINDI</button>
-                <button class="tab-btn" data-cat="English">ENGLISH</button>
-                <button class="tab-btn" data-cat="DJ">DJ</button>
-                <button class="tab-btn" data-cat="Band">BAND / PAD</button>
-                <button class="tab-btn" data-cat="New-Releases">NEW RELEASES</button>
-                <button class="tab-btn special yt" data-cat="_youtube" id="tab-youtube">▶ YOUTUBE FULL SONGS</button><button class="tab-btn special" data-cat="_online" id="tab-online">🌐 ITUNES</button>
-                <button class="tab-btn special" data-cat="_favorites">★ FAVORITES</button>
-                <button class="tab-btn special" data-cat="_history">⏱ HISTORY</button>
-                <button class="tab-btn special" data-cat="_playlists">📋 PLAYLISTS</button>
+                <button class="tab-btn active" data-cat="All" id="tab-all">📁 USB SONGS</button>
+                <button class="tab-btn special" data-cat="_favorites" id="tab-fav">★ FAVORITES</button>
+                <button class="tab-btn special" data-cat="_history" id="tab-hist">⏱ HISTORY</button>
+                <button class="tab-btn special yt" data-cat="_youtube" id="tab-youtube" style="display:none">▶ YOUTUBE RESULTS</button>
             </div>
 
             <!-- Search and Action Bar -->
             <div class="library-search-actions">
                 <div class="search-box">
                     <span class="search-icon">🔍</span>
-                    <input type="text" id="library-search" placeholder="Search full YouTube DJ remix, Telugu folk, Bollywood, EDM..." autocomplete="off">
-                    <button id="btn-search-online" class="btn-search-go" title="Search Global Online Music Catalog">
-                        🌐 SEARCH ONLINE
+                    <input type="text" id="library-search" placeholder="Search any song or DJ remix on YouTube..." autocomplete="off">
+                    <button id="btn-search-online" class="btn-search-go" title="Search directly on YouTube">
+                        ▶ SEARCH YOUTUBE
                     </button>
                 </div>
                 <button id="btn-import-local" class="btn-tool" title="Import MP3/WAV/M4A songs from this laptop to USB">
@@ -461,8 +411,9 @@
     </section>
 
     <!-- Invisible Audio Elements for Deck A and Deck B -->
-    <audio id="audio-deck-a" preload="auto" crossorigin="anonymous"></audio>
-    <audio id="audio-deck-b" preload="auto" crossorigin="anonymous"></audio>
+    <audio id="audio-deck-a"></audio>
+    <audio id="audio-deck-b"></audio>
+
 
     <script src="app.js"></script>
 </body>
