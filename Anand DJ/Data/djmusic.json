@@ -1,0 +1,160 @@
+{
+  "tracks": [
+    {
+      "id": "trk_4d757369632f",
+      "title": "Live Pad Rhythm 100BPM",
+      "artist": "DJ Library",
+      "category": "Band",
+      "bpm": 100,
+      "duration": 15,
+      "relativePath": "Music/Band/Live_Pad_Rhythm_100BPM.wav",
+      "filename": "Live_Pad_Rhythm_100BPM.wav",
+      "dateAdded": "2026-09-28T17:19:15.368Z"
+    },
+    {
+      "id": "trk_4d757369632f",
+      "title": "Club EDM Drop 128BPM",
+      "artist": "DJ Library",
+      "category": "DJ",
+      "bpm": 128,
+      "duration": 15,
+      "relativePath": "Music/DJ/Club_EDM_Drop_128BPM.wav",
+      "filename": "Club_EDM_Drop_128BPM.wav",
+      "dateAdded": "2026-09-28T17:19:15.371Z"
+    },
+    {
+      "id": "trk_4d757369632f",
+      "title": "Nadakallo Nadaka DJ Super HIt Song ｜｜ Folk Dj Songs ｜｜ Disco Recording Company",
+      "artist": "DJ Library",
+      "category": "DJ",
+      "bpm": 120,
+      "duration": 15,
+      "relativePath": "Music/DJ/Nadakallo Nadaka DJ Super HIt Song ｜｜ Folk Dj Songs ｜｜ Disco Recording Company.mp4",
+      "filename": "Nadakallo Nadaka DJ Super HIt Song ｜｜ Folk Dj Songs ｜｜ Disco Recording Company.mp4",
+      "dateAdded": "2026-09-28T18:02:57.718Z"
+    },
+    {
+      "id": "trk_4d757369632f",
+      "title": "Festival Anthem 115BPM",
+      "artist": "DJ Library",
+      "category": "English",
+      "bpm": 115,
+      "duration": 15,
+      "relativePath": "Music/English/Festival_Anthem_115BPM.wav",
+      "filename": "Festival_Anthem_115BPM.wav",
+      "dateAdded": "2026-09-28T17:19:15.372Z"
+    },
+    {
+      "id": "trk_4d757369632f",
+      "title": "Bollywood Party Groove 125BPM",
+      "artist": "DJ Library",
+      "category": "Hindi",
+      "bpm": 125,
+      "duration": 15,
+      "relativePath": "Music/Hindi/Bollywood_Party_Groove_125BPM.wav",
+      "filename": "Bollywood_Party_Groove_125BPM.wav",
+      "dateAdded": "2026-09-28T17:19:15.372Z"
+    },
+    {
+      "id": "trk_4d757369632f",
+      "title": "Summer Remix 2026 130BPM",
+      "artist": "DJ Library",
+      "category": "New-Releases",
+      "bpm": 130,
+      "duration": 15,
+      "relativePath": "Music/New-Releases/Summer_Remix_2026_130BPM.wav",
+      "filename": "Summer_Remix_2026_130BPM.wav",
+      "dateAdded": "2026-09-28T17:19:15.373Z"
+    },
+    {
+      "id": "trk_4d757369632f",
+      "title": "Naatu Naatu RRR",
+      "artist": "DJ Library",
+      "category": "Telugu",
+      "bpm": 120,
+      "duration": 15,
+      "relativePath": "Music/Telugu/Naatu_Naatu_RRR.m4a",
+      "filename": "Naatu_Naatu_RRR.m4a",
+      "dateAdded": "2026-09-28T17:50:14.289Z"
+    },
+    {
+      "id": "trk_4d757369632f",
+      "title": "Telugu Mass Dhol 120BPM",
+      "artist": "DJ Library",
+      "category": "Telugu",
+      "bpm": 120,
+      "duration": 15,
+      "relativePath": "Music/Telugu/Telugu_Mass_Dhol_120BPM.wav",
+      "filename": "Telugu_Mass_Dhol_120BPM.wav",
+      "dateAdded": "2026-09-28T17:19:15.373Z"
+    }
+  ],
+  "categories": [
+    "Telugu",
+    "Hindi",
+    "English",
+    "DJ",
+    "Band",
+    "New-Releases"
+  ],
+  "playlists": [
+    {
+      "id": "pl_emergency_safe",
+      "name": "EMERGENCY EVENT SAFE LIST",
+      "description": "High-reliability emergency backup tracks guaranteed to keep crowd energized",
+      "trackIds": [
+        "trk_4d757369632f",
+        "trk_4d757369632f",
+        "trk_4d757369632f",
+        "trk_4d757369632f",
+        "trk_4d757369632f",
+        "trk_4d757369632f"
+      ]
+    },
+    {
+      "id": "pl_primetime",
+      "name": "Main Prime-Time Event Set",
+      "description": "Curated high-energy hits for prime event slots",
+      "trackIds": []
+    }
+  ],
+  "favorites": [],
+  "history": [
+    {
+      "id": "hist_1790616525264",
+      "trackId": "trk_4d757369632f",
+      "title": "Live Pad Rhythm 100BPM",
+      "artist": "DJ Library",
+      "category": "Band",
+      "deck": "Deck B",
+      "timestamp": "2026-09-28T17:28:45.264Z",
+      "duration": 15
+    },
+    {
+      "id": "hist_1790616450910",
+      "trackId": "trk_4d757369632f",
+      "title": "Live Pad Rhythm 100BPM",
+      "artist": "DJ Library",
+      "category": "Band",
+      "deck": "Deck B",
+      "timestamp": "2026-09-28T17:27:30.910Z",
+      "duration": 15
+    },
+    {
+      "id": "hist_1790616437195",
+      "trackId": "trk_4d757369632f",
+      "title": "Live Pad Rhythm 100BPM",
+      "artist": "DJ Library",
+      "category": "Band",
+      "deck": "Deck A",
+      "timestamp": "2026-09-28T17:27:17.196Z",
+      "duration": 15
+    }
+  ],
+  "settings": {
+    "audioDevice": "default",
+    "masterVolume": 0.85,
+    "crossfaderCurve": "equal_power",
+    "bufferLatency": "low"
+  }
+}

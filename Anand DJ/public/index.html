@@ -1,0 +1,470 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DJ MUSIC SYSTEM — Portable USB Edition</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-950 text-gray-100 select-none">
+    <!-- Hidden File Input for Importing Songs -->
+    <input type="file" id="local-file-picker" multiple accept="audio/*" style="display:none">
+
+    <!-- Top System Header -->
+    <header class="top-bar">
+        <div class="brand">
+            <div class="brand-title">DJ MUSIC SYSTEM</div>
+            <div class="brand-tag">PORTABLE USB & EVENT SAFETY</div>
+        </div>
+
+        <div class="system-indicators">
+            <div class="indicator-badge" id="badge-usb-root" title="Portable USB Root Path">
+                <span class="status-dot green"></span>
+                <span class="label">USB ROOT:</span>
+                <span class="value" id="val-usb-root">DISCOVERING...</span>
+            </div>
+
+            <div class="indicator-badge" id="badge-library-status">
+                <span class="status-dot green"></span>
+                <span class="label">LIBRARY:</span>
+                <span class="value" id="val-track-count">0 TRACKS</span>
+            </div>
+
+            <div class="audio-device-picker">
+                <span class="label">AUDIO OUT:</span>
+                <select id="audio-device-select" class="device-select">
+                    <option value="default">Default Laptop Audio</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button id="btn-open-checklist" class="btn-safety-guide" title="Pre-Event Checklist & Safety Rules">
+                📋 EVENT SAFETY PLAN
+            </button>
+            <button id="btn-toggle-emergency" class="btn-emergency-mode" title="Emergency Failover & Recovery Console">
+                🚨 EMERGENCY RECOVERY
+            </button>
+        </div>
+    </header>
+
+    <!-- Emergency Recovery Screen (Section 11 of Documentation) -->
+    <div id="emergency-modal" class="emergency-overlay hidden">
+        <div class="emergency-container">
+            <div class="emergency-header">
+                <div class="emergency-title-box">
+                    <span class="pulse-beacon"></span>
+                    <h2>EMERGENCY FAILOVER & RECOVERY CONSOLE</h2>
+                </div>
+                <button id="btn-close-emergency" class="emergency-close">&times; CLOSE</button>
+            </div>
+
+            <div class="emergency-status-grid">
+                <div class="status-card">
+                    <span class="card-label">APPLICATION STATUS</span>
+                    <span class="card-val ready">● READY (PORTABLE)</span>
+                </div>
+                <div class="status-card">
+                    <span class="card-label">MUSIC LIBRARY</span>
+                    <span class="card-val ready" id="em-lib-status">● READY (6 TRACKS)</span>
+                </div>
+                <div class="status-card">
+                    <span class="card-label">AUDIO OUTPUT ROUTE</span>
+                    <span class="card-val" id="em-audio-status">● [DEFAULT AUDIO]</span>
+                </div>
+            </div>
+
+            <div class="emergency-last-played-box">
+                <div class="last-played-header">LAST KNOWN PLAYBACK STATE (CRASH RESTORATION)</div>
+                <div class="last-played-body">
+                    <div class="track-artwork-placeholder" id="em-art">🎵</div>
+                    <div class="track-info-col">
+                        <div class="track-title-large" id="em-track-title">Club EDM Drop (128 BPM)</div>
+                        <div class="track-artist-large" id="em-track-artist">DJ Antigravity • [DJ Mix]</div>
+                        <div class="track-elapsed-tag" id="em-track-time">Elapsed: 00:08 / 00:15</div>
+                    </div>
+                    <div class="quick-deck-actions">
+                        <button class="btn-quick-load deck-a" id="em-load-deck-a">LOAD TO DECK A</button>
+                        <button class="btn-quick-load deck-b" id="em-load-deck-b">LOAD TO DECK B</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="emergency-quick-access">
+                <span class="qa-label">QUICK ACCESS PLAYLISTS:</span>
+                <div class="qa-buttons">
+                    <button class="btn-qa active" id="em-qa-emergency-list">🛡 EMERGENCY SAFE LIST</button>
+                    <button class="btn-qa" id="em-qa-favorites">★ FAVORITES</button>
+                    <button class="btn-qa" id="em-qa-primetime">🔥 PRIME-TIME SET</button>
+                </div>
+            </div>
+
+            <button id="btn-emergency-resume" class="btn-massive-resume">
+                ⚡ RESUME EMERGENCY EVENT PLAYBACK NOW ⚡
+            </button>
+        </div>
+    </div>
+
+    <!-- Pre-Event Interactive Checklist Modal -->
+    <div id="checklist-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>PRE-EVENT SAFETY CHECKLIST & TWO-USB STRATEGY</h3>
+                <button id="btn-close-checklist" class="modal-close">&times;</button>
+            </div>
+            <div class="checklist-content">
+                <div class="checklist-status-banner" id="checklist-status-banner">
+                    <span id="checklist-progress-text">Checklist Progress: 0 / 7 Completed</span>
+                </div>
+
+                <div class="checklist-section">
+                    <h4>7-Step Laptop Failover Procedure (Interactive Check)</h4>
+                    <div class="interactive-checklist">
+                        <label class="check-item"><input type="checkbox" class="chk-step" data-step="1"> 1. Secure audio path to amplifier and alert event team.</label>
+                        <label class="check-item"><input type="checkbox" class="chk-step" data-step="2"> 2. Unplug Primary USB from frozen/failed laptop.</label>
+                        <label class="check-item"><input type="checkbox" class="chk-step" data-step="3"> 3. Plug USB into Backup Laptop (or connect emergency USB copy).</label>
+                        <label class="check-item"><input type="checkbox" class="chk-step" data-step="4"> 4. Launch <code>start-dj.bat</code> / <code>DJMusic.exe</code> from USB.</label>
+                        <label class="check-item"><input type="checkbox" class="chk-step" data-step="5"> 5. Confirm or switch audio output device in top bar.</label>
+                        <label class="check-item"><input type="checkbox" class="chk-step" data-step="6"> 6. Open Emergency Recovery console (pulsing red button).</label>
+                        <label class="check-item"><input type="checkbox" class="chk-step" data-step="7"> 7. Click <b>RESUME EMERGENCY EVENT PLAYBACK</b>.</label>
+                    </div>
+                </div>
+
+                <div class="checklist-section">
+                    <h4>Two-USB Redundancy Protocol</h4>
+                    <ul>
+                        <li><b>USB 1 (Primary):</b> Active DJ playback media.</li>
+                        <li><b>USB 2 (Emergency):</b> Identical cloned media kept physically separate.</li>
+                        <li>Both USBs tested on backup laptop before event begins.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main DJ Console -->
+    <main class="dj-console">
+        <!-- DECK A (Cyan) -->
+        <section class="deck deck-a" id="deck-a-container">
+            <div class="deck-header">
+                <div class="deck-badge">DECK A</div>
+                <div class="deck-track-details">
+                    <div class="track-title" id="deck-a-title">NO TRACK LOADED</div>
+                    <div class="track-artist" id="deck-a-artist">Search any song online or choose below</div>
+                </div>
+                <div class="deck-meta">
+                    <div class="meta-item"><span class="k">BPM</span><span class="v" id="deck-a-bpm">---.--</span></div>
+                    <div class="meta-item"><span class="k">PITCH</span><span class="v" id="deck-a-pitch-val">0.0%</span></div>
+                </div>
+            </div>
+
+            <!-- Waveform Canvas -->
+            <div class="waveform-container">
+                <canvas id="waveform-deck-a" width="600" height="75"></canvas>
+                <div class="time-readout">
+                    <span id="deck-a-elapsed">00:00</span>
+                    <span id="deck-a-remaining">-00:00</span>
+                </div>
+            </div>
+
+            <!-- Jog Wheel & Controls Row -->
+            <div class="deck-controls-body">
+                <div class="jog-section">
+                    <div class="jog-wheel" id="jog-a">
+                        <div class="jog-ring"></div>
+                        <div class="jog-marker" id="jog-marker-a"></div>
+                        <div class="jog-center">
+                            <span class="jog-label">DECK A</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pitch Slider -->
+                <div class="pitch-section">
+                    <div class="pitch-label">TEMPO</div>
+                    <div class="pitch-slider-wrapper">
+                        <input type="range" id="deck-a-pitch" min="-16" max="16" step="0.1" value="0" orient="vertical">
+                    </div>
+                    <div class="pitch-nudge-btns">
+                        <button class="btn-nudge" id="deck-a-nudge-down">-</button>
+                        <button class="btn-nudge" id="deck-a-nudge-up">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Beat Looping Row -->
+            <div class="loop-bar">
+                <span class="loop-tag">LOOP:</span>
+                <button class="btn-loop" data-deck="A" data-beats="0.5">1/2</button>
+                <button class="btn-loop" data-deck="A" data-beats="1">1</button>
+                <button class="btn-loop" data-deck="A" data-beats="2">2</button>
+                <button class="btn-loop active" data-deck="A" data-beats="4">4</button>
+                <button class="btn-loop" data-deck="A" data-beats="8">8</button>
+                <button class="btn-loop" data-deck="A" data-beats="16">16</button>
+                <button class="btn-loop-toggle" id="deck-a-loop-toggle">ACTIVE</button>
+            </div>
+
+            <!-- Transport Control Buttons -->
+            <div class="transport-row">
+                <button class="btn-transport btn-cue" id="deck-a-cue">CUE</button>
+                <button class="btn-transport btn-play" id="deck-a-play">▶ PLAY</button>
+                <button class="btn-transport btn-sync" id="deck-a-sync">SYNC</button>
+            </div>
+        </section>
+
+        <!-- CENTRAL MIXER & EQ -->
+        <section class="mixer-section">
+            <div class="mixer-header">
+                <span>MASTER MIXER</span>
+            </div>
+
+            <!-- EQ Channels -->
+            <div class="eq-channels">
+                <!-- Deck A Channel EQ -->
+                <div class="channel-strip">
+                    <span class="ch-label ch-a">CH A</span>
+                    <div class="knob-group">
+                        <label>TRIM</label>
+                        <input type="range" id="deck-a-gain" min="0" max="1.5" step="0.05" value="1.0" class="knob-slider">
+                    </div>
+                    <div class="knob-group">
+                        <label>HI</label>
+                        <input type="range" id="deck-a-hi" min="-24" max="12" step="1" value="0" class="knob-slider">
+                        <button class="btn-kill" id="deck-a-kill-hi">KILL</button>
+                    </div>
+                    <div class="knob-group">
+                        <label>MID</label>
+                        <input type="range" id="deck-a-mid" min="-24" max="12" step="1" value="0" class="knob-slider">
+                        <button class="btn-kill" id="deck-a-kill-mid">KILL</button>
+                    </div>
+                    <div class="knob-group">
+                        <label>LOW</label>
+                        <input type="range" id="deck-a-low" min="-24" max="12" step="1" value="0" class="knob-slider">
+                        <button class="btn-kill" id="deck-a-kill-low">KILL</button>
+                    </div>
+
+                    <!-- Deck A Volume Fader -->
+                    <div class="fader-group">
+                        <div class="fader-meter">
+                            <div class="meter-bar" id="meter-deck-a"></div>
+                        </div>
+                        <input type="range" id="deck-a-fader" min="0" max="1" step="0.01" value="0.9" orient="vertical" class="volume-fader">
+                    </div>
+                </div>
+
+                <!-- Master Controls & Center Meters -->
+                <div class="master-strip">
+                    <div class="master-vol-box">
+                        <label>MASTER</label>
+                        <input type="range" id="master-vol" min="0" max="1.2" step="0.02" value="0.9" class="knob-slider master-knob">
+                    </div>
+
+                    <div class="master-vu-meters">
+                        <div class="vu-col">
+                            <span class="vu-lbl">L</span>
+                            <div class="vu-bar-track">
+                                <div class="vu-level" id="vu-master-l"></div>
+                            </div>
+                        </div>
+                        <div class="vu-col">
+                            <span class="vu-lbl">R</span>
+                            <div class="vu-bar-track">
+                                <div class="vu-level" id="vu-master-r"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="booth-monitor-box">
+                        <span class="booth-tag">PORTABLE</span>
+                        <span class="bitrate-tag">44.1 kHz</span>
+                    </div>
+                </div>
+
+                <!-- Deck B Channel EQ -->
+                <div class="channel-strip">
+                    <span class="ch-label ch-b">CH B</span>
+                    <div class="knob-group">
+                        <label>TRIM</label>
+                        <input type="range" id="deck-b-gain" min="0" max="1.5" step="0.05" value="1.0" class="knob-slider">
+                    </div>
+                    <div class="knob-group">
+                        <label>HI</label>
+                        <input type="range" id="deck-b-hi" min="-24" max="12" step="1" value="0" class="knob-slider">
+                        <button class="btn-kill" id="deck-b-kill-hi">KILL</button>
+                    </div>
+                    <div class="knob-group">
+                        <label>MID</label>
+                        <input type="range" id="deck-b-mid" min="-24" max="12" step="1" value="0" class="knob-slider">
+                        <button class="btn-kill" id="deck-b-kill-mid">KILL</button>
+                    </div>
+                    <div class="knob-group">
+                        <label>LOW</label>
+                        <input type="range" id="deck-b-low" min="-24" max="12" step="1" value="0" class="knob-slider">
+                        <button class="btn-kill" id="deck-b-kill-low">KILL</button>
+                    </div>
+
+                    <!-- Deck B Volume Fader -->
+                    <div class="fader-group">
+                        <div class="fader-meter">
+                            <div class="meter-bar" id="meter-deck-b"></div>
+                        </div>
+                        <input type="range" id="deck-b-fader" min="0" max="1" step="0.01" value="0.9" orient="vertical" class="volume-fader">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Crossfader Section -->
+            <div class="crossfader-container">
+                <div class="crossfader-labels">
+                    <span class="cf-tag a">DECK A</span>
+                    <span class="cf-curve-label">CROSSFADER</span>
+                    <span class="cf-tag b">DECK B</span>
+                </div>
+                <div class="cf-track-wrapper">
+                    <input type="range" id="crossfader" min="0" max="1" step="0.01" value="0.5" class="crossfader-slider">
+                </div>
+            </div>
+        </section>
+
+        <!-- DECK B (Orange) -->
+        <section class="deck deck-b" id="deck-b-container">
+            <div class="deck-header">
+                <div class="deck-badge">DECK B</div>
+                <div class="deck-track-details">
+                    <div class="track-title" id="deck-b-title">NO TRACK LOADED</div>
+                    <div class="track-artist" id="deck-b-artist">Search any song online or choose below</div>
+                </div>
+                <div class="deck-meta">
+                    <div class="meta-item"><span class="k">BPM</span><span class="v" id="deck-b-bpm">---.--</span></div>
+                    <div class="meta-item"><span class="k">PITCH</span><span class="v" id="deck-b-pitch-val">0.0%</span></div>
+                </div>
+            </div>
+
+            <!-- Waveform Canvas -->
+            <div class="waveform-container">
+                <canvas id="waveform-deck-b" width="600" height="75"></canvas>
+                <div class="time-readout">
+                    <span id="deck-b-elapsed">00:00</span>
+                    <span id="deck-b-remaining">-00:00</span>
+                </div>
+            </div>
+
+            <!-- Jog Wheel & Controls Row -->
+            <div class="deck-controls-body">
+                <div class="jog-section">
+                    <div class="jog-wheel" id="jog-b">
+                        <div class="jog-ring"></div>
+                        <div class="jog-marker" id="jog-marker-b"></div>
+                        <div class="jog-center">
+                            <span class="jog-label">DECK B</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pitch Slider -->
+                <div class="pitch-section">
+                    <div class="pitch-label">TEMPO</div>
+                    <div class="pitch-slider-wrapper">
+                        <input type="range" id="deck-b-pitch" min="-16" max="16" step="0.1" value="0" orient="vertical">
+                    </div>
+                    <div class="pitch-nudge-btns">
+                        <button class="btn-nudge" id="deck-b-nudge-down">-</button>
+                        <button class="btn-nudge" id="deck-b-nudge-up">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Beat Looping Row -->
+            <div class="loop-bar">
+                <span class="loop-tag">LOOP:</span>
+                <button class="btn-loop" data-deck="B" data-beats="0.5">1/2</button>
+                <button class="btn-loop" data-deck="B" data-beats="1">1</button>
+                <button class="btn-loop" data-deck="B" data-beats="2">2</button>
+                <button class="btn-loop active" data-deck="B" data-beats="4">4</button>
+                <button class="btn-loop" data-deck="B" data-beats="8">8</button>
+                <button class="btn-loop" data-deck="B" data-beats="16">16</button>
+                <button class="btn-loop-toggle" id="deck-b-loop-toggle">ACTIVE</button>
+            </div>
+
+            <!-- Transport Control Buttons -->
+            <div class="transport-row">
+                <button class="btn-transport btn-cue" id="deck-b-cue">CUE</button>
+                <button class="btn-transport btn-play" id="deck-b-play">▶ PLAY</button>
+                <button class="btn-transport btn-sync" id="deck-b-sync">SYNC</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Music Library & Universal Search -->
+    <section class="music-library-section">
+        <div class="library-toolbar">
+            <!-- Category Tabs -->
+            <div class="category-tabs" id="category-tabs">
+                <button class="tab-btn active" data-cat="All">ALL</button>
+                <button class="tab-btn" data-cat="Telugu">TELUGU</button>
+                <button class="tab-btn" data-cat="Hindi">HINDI</button>
+                <button class="tab-btn" data-cat="English">ENGLISH</button>
+                <button class="tab-btn" data-cat="DJ">DJ</button>
+                <button class="tab-btn" data-cat="Band">BAND / PAD</button>
+                <button class="tab-btn" data-cat="New-Releases">NEW RELEASES</button>
+                <button class="tab-btn special yt" data-cat="_youtube" id="tab-youtube">▶ YOUTUBE FULL SONGS</button><button class="tab-btn special" data-cat="_online" id="tab-online">🌐 ITUNES</button>
+                <button class="tab-btn special" data-cat="_favorites">★ FAVORITES</button>
+                <button class="tab-btn special" data-cat="_history">⏱ HISTORY</button>
+                <button class="tab-btn special" data-cat="_playlists">📋 PLAYLISTS</button>
+            </div>
+
+            <!-- Search and Action Bar -->
+            <div class="library-search-actions">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="library-search" placeholder="Search full YouTube DJ remix, Telugu folk, Bollywood, EDM..." autocomplete="off">
+                    <button id="btn-search-online" class="btn-search-go" title="Search Global Online Music Catalog">
+                        🌐 SEARCH ONLINE
+                    </button>
+                </div>
+                <button id="btn-import-local" class="btn-tool" title="Import MP3/WAV/M4A songs from this laptop to USB">
+                    📁 IMPORT SONGS
+                </button>
+                <button id="btn-scan-library" class="btn-tool" title="Scan USB Music Folder for new tracks">
+                    🔄 RESCAN USB
+                </button>
+            </div>
+        </div>
+
+        <!-- Search Status Notification Bar -->
+        <div id="search-status-bar" class="search-status-bar hidden">
+            <span id="search-status-text">Searching online catalog...</span>
+        </div>
+
+        <!-- Track Table Container -->
+        <div class="track-table-container">
+            <table class="track-table">
+                <thead>
+                    <tr>
+                        <th width="40">FAV</th>
+                        <th width="150">ACTIONS</th>
+                        <th>TITLE</th>
+                        <th>ARTIST</th>
+                        <th width="120">SOURCE / CATEGORY</th>
+                        <th width="80">BPM</th>
+                        <th width="80">TIME</th>
+                    </tr>
+                </thead>
+                <tbody id="track-table-body">
+                    <!-- Populated dynamically via app.js -->
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Invisible Audio Elements for Deck A and Deck B -->
+    <audio id="audio-deck-a" preload="auto" crossorigin="anonymous"></audio>
+    <audio id="audio-deck-b" preload="auto" crossorigin="anonymous"></audio>
+
+    <script src="app.js"></script>
+</body>
+</html>
+

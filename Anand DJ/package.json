@@ -1,0 +1,13 @@
+﻿{
+  "name": "dj-music-system-portable",
+  "version": "1.0.0",
+  "description": "Portable Two-Deck DJ Application & Emergency Event Safety System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "generate-demo": "node scripts/generate_demo_tracks.js"
+  },
+  "keywords": ["dj", "audio", "web-audio", "portable", "emergency-safety"],
+  "author": "Antigravity DJ Systems",
+  "license": "ISC"
+}

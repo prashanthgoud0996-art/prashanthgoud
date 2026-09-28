@@ -1,0 +1,27 @@
+{
+  "deckA": {
+    "trackId": "online_1594544794",
+    "currentTime": 0,
+    "isPlaying": false
+  },
+  "deckB": {
+    "trackId": "online_106217898",
+    "currentTime": 29.976961,
+    "isPlaying": false
+  },
+  "crossfader": "0.5",
+  "lastPlayed": {
+    "id": "online_1594544794",
+    "title": "Naatu Naatu (From \"RRR\")",
+    "artist": "Rahul Sipligunj, Kaala Bhairava & M.M. Keeravani",
+    "album": "Naatu Naatu (From \"RRR\") - Single",
+    "category": "Telugu",
+    "bpm": 124,
+    "duration": 214,
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/dd/39/14/dd3914e5-a2f3-b355-51f3-9a1f0e3ca246/8903431853592_cover.jpg/300x300bb.jpg",
+    "previewUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/8e/dd/a4/8edda474-3fe1-3fe6-43d3-765db520a29b/mzaf_11740310005222997767.plus.aac.p.m4a",
+    "isOnline": true
+  },
+  "updatedAt": "2026-09-28T17:53:56.914Z",
+  "usbRoot": "C:\\Anand DJ"
+}
