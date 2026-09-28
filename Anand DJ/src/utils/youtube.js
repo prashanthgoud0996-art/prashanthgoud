@@ -225,7 +225,9 @@ class YouTubeService {
         }
 
         return new Promise((resolve, reject) => {
-            const cmd = `python -m yt_dlp --extractor-args "youtube:player_client=android" -g -f "ba/b" "https://www.youtube.com/watch?v=${ytId}"`;
+            const pyCmd = process.platform === 'win32' ? 'python' : 'python3';
+            // Use fast format 18 (progressive MP4/AAC) for instant streaming and seeking, fallback to ba/b
+            const cmd = `${pyCmd} -m yt_dlp --no-playlist --no-warnings --extractor-args "youtube:player_client=android" -g -f "18/ba/b" "https://www.youtube.com/watch?v=${ytId}"`;
             exec(cmd, { maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
                 if (err) return reject(err);
                 const urls = stdout.trim().split('\n').filter(u => u.startsWith('http'));
