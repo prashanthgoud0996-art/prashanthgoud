@@ -167,14 +167,18 @@ document.addEventListener('DOMContentLoaded', () => {
             this.audio.src = src;
             this.audio.playbackRate = Math.max(0.5, Math.min(2.0, 1 + (this.pitch / 100)));
 
-            // ── 5. Wait for canplay with a 6-second safety timeout ────────────
+            // ── 5. Wait for canplay / loadeddata with a 20-second safety timeout ─
             await new Promise((resolve) => {
                 let done = false;
                 const finish = () => { if (!done) { done = true; resolve(); } };
 
-                const timer = setTimeout(finish, 6000); // 6s max wait
+                const timer = setTimeout(finish, 20000); // 20s max wait for online streaming
 
                 this.audio.addEventListener('canplay', () => {
+                    clearTimeout(timer); finish();
+                }, { once: true });
+
+                this.audio.addEventListener('loadeddata', () => {
                     clearTimeout(timer); finish();
                 }, { once: true });
 
@@ -205,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     : this.track.isOnline ? '🌐 CLOUD' : '💾 USB';
                 const shortTitle = cleanSongTitle(this.track.title);
                 titleEl.textContent  = shortTitle;
-                titleEl.title        = this.track.title; // hover to see full original title
+                titleEl.title        = this.track.title;
                 artistEl.textContent = `${this.track.artist || 'YouTube'} • [${sourceTag}]`;
                 artistEl.title       = `${this.track.artist} (${this.track.title})`;
                 bpmEl.textContent    = (this.baseBpm * (1 + this.pitch / 100)).toFixed(1);
@@ -220,7 +224,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         play() {
             if (!this.track) return;
-            // Ensure AudioContext exists and is running
             initAudioContext();
             this._doPlay();
         }
@@ -230,38 +233,43 @@ document.addEventListener('DOMContentLoaded', () => {
             this.audio.muted = false;
             this.audio.volume = 1.0;
 
-            // If not ready yet, wait briefly then retry
-            if (this.audio.readyState < 2) {
-                const onReady = () => {
-                    this.audio.removeEventListener('canplay', onReady);
-                    this._doPlay();
-                };
-                this.audio.addEventListener('canplay', onReady, { once: true });
-                return;
-            }
+            const btn = document.getElementById(this.isDeckA ? 'deck-a-play' : 'deck-b-play');
+            if (btn) { btn.innerHTML = '⏳ STARTING...'; }
 
-            this.audio.play().then(() => {
-                this.isPlaying = true;
-                const btn = document.getElementById(this.isDeckA ? 'deck-a-play' : 'deck-b-play');
-                if (btn) { btn.classList.add('playing'); btn.innerHTML = '❚❚ PAUSE'; }
-                if (!this.track.isOnline && !this.track.isYouTube) {
-                    fetch('/api/history/log', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            trackId: this.track.id,
-                            deck: this.isDeckA ? 'Deck A' : 'Deck B',
-                            duration: this.audio.duration || 0
-                        })
-                    }).catch(() => {});
-                }
-            }).catch(err => {
-                console.warn('Play failed, retrying after canplay:', err.message);
-                // Browser blocked autoplay — retry on next user gesture is needed
-                const btn = document.getElementById(this.isDeckA ? 'deck-a-play' : 'deck-b-play');
-                if (btn) { btn.classList.remove('playing'); btn.innerHTML = '▶ PLAY'; }
-                this.isPlaying = false;
-            });
+            // Direct call to play() locks in browser user interaction gesture
+            const playPromise = this.audio.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    this.isPlaying = true;
+                    if (btn) { btn.classList.add('playing'); btn.innerHTML = '❚❚ PAUSE'; }
+                    if (!this.track.isOnline && !this.track.isYouTube) {
+                        fetch('/api/history/log', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                trackId: this.track.id,
+                                deck: this.isDeckA ? 'Deck A' : 'Deck B',
+                                duration: this.audio.duration || 0
+                            })
+                        }).catch(() => {});
+                    }
+                }).catch(err => {
+                    console.warn('Playback deferred / buffering:', err.message);
+                    if (btn) { btn.innerHTML = '⏳ BUFFERING...'; }
+                    const onReady = () => {
+                        this.audio.removeEventListener('canplay', onReady);
+                        this.audio.play().then(() => {
+                            this.isPlaying = true;
+                            if (btn) { btn.classList.add('playing'); btn.innerHTML = '❚❚ PAUSE'; }
+                        }).catch(e => {
+                            console.error('Play retry error:', e);
+                            if (btn) { btn.classList.remove('playing'); btn.innerHTML = '▶ PLAY'; }
+                            this.isPlaying = false;
+                        });
+                    };
+                    this.audio.addEventListener('canplay', onReady, { once: true });
+                });
+            }
         }
 
         pause() {
